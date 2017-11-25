@@ -1,7 +1,7 @@
 defmodule SimEq.Factorization do
-  import SimEq.Matrix
+  import Matrix
 
-  #@fn     [[float]] solve_factorize(%SimEq.Matrix, [[float]])
+  #@fn     [[float]] solve_factorize(%Matrix, [[float]])
   #@param  coefficient matrix
   #@param inhomogenious vector's list
 
@@ -36,7 +36,7 @@ defmodule SimEq.Factorization do
     Enum.at(Enum.at(acm_l, i-1), j-i-1)
   end
 
-  def factorize(%SimEq.Matrix{line: l_m, row: r_n} = matrix,
+  def factorize(%Matrix{line: l_m, row: r_n} = matrix,
     i, acm_r, acm_l) when l_m == i do
     subed_val = get_factor(matrix, l_m, r_n)
     sub_val = Enum.zip(acm_r, acm_l)
@@ -54,10 +54,10 @@ defmodule SimEq.Factorization do
         gen_u(acm_l, i, j)
       end
     end
-    {%SimEq.Matrix{line: l_m, row: r_n, contents: l_c},
-     %SimEq.Matrix{line: l_m, row: r_n, contents: u_c}}
+    {%Matrix{line: l_m, row: r_n, contents: l_c},
+     %Matrix{line: l_m, row: r_n, contents: u_c}}
   end
-  def factorize(%SimEq.Matrix{line: r_n} = matrix,
+  def factorize(%Matrix{line: r_n} = matrix,
     1, _, _) do
     l_r = get_row(matrix, 1)
     [diag_factor|_] = l_r
@@ -67,7 +67,7 @@ defmodule SimEq.Factorization do
     factorize(matrix,
       2, [l_r], [u_l])
   end
-  def factorize(%SimEq.Matrix{line: l_m, row: r_n} = m,
+  def factorize(%Matrix{line: l_m, row: r_n} = m,
     i, acm_r, acm_l) do
 
     subed_r = Enum.drop(get_row(m, i), i-1)
@@ -110,7 +110,7 @@ defmodule SimEq.Factorization do
 
 
   def forward_substitute(lt_matrix, inhom_vector) do
-    %SimEq.Matrix{contents: c} = expand(lt_matrix, inhom_vector)
+    %Matrix{contents: c} = expand(lt_matrix, inhom_vector)
     calc_result_f(c, [])
   end
 
@@ -124,8 +124,6 @@ defmodule SimEq.Factorization do
 
   def solve_factorize(matrix, inhom_vectors) do
     {lt_matrix, ut_matrix} = factorize(matrix, 1, [], [])
-    print_matrix_row(lt_matrix)
-    print_matrix_row(ut_matrix)
     Enum.map(inhom_vectors,
       fn v -> forward_substitute(lt_matrix, v)
               |> backward_substitute(ut_matrix) end)

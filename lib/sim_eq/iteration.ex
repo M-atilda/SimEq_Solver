@@ -1,11 +1,11 @@
 defmodule SimEq.Iteration do
-  import SimEq.Matrix
+  import Matrix
 
   # defolt params for iterative calcuration
   @defolt_tolerance 1.0e-6
   @defolt_max_iteration_times 100
 
-  #@fn     [float] solve_jacob(%SimEq.Matrix, [float], ())
+  #@fn     [float] solve_jacob(%Matrix, [float], ())
   #@brief  this function returns the taple
   #          which consists of the end-status,
   #                            the times of iteration
@@ -40,7 +40,7 @@ defmodule SimEq.Iteration do
     (inhom_val - sub_val) /
     Enum.at(l, i-1)
   end
-  defp calc_next_result(%SimEq.Matrix{line: l_m} = matrix, inhom_vector,
+  defp calc_next_result(%Matrix{line: l_m} = matrix, inhom_vector,
                         result) do
     for i <- 1..l_m do i end
     |> Enum.map(fn i

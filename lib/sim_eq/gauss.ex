@@ -1,7 +1,7 @@
 defmodule SimEq.Gauss do
-  import SimEq.Matrix
+  import Matrix
 
-  #@fn      [float] solve_gaussian_eliminate(%SimEq.Matrix, [float], (bool))
+  #@fn      [float] solve_gaussian_eliminate(%Matrix, [float], (bool))
   #@param  coefficient matrix
   #@param  inhomogenious vector
   #@param  use pivoting or not(option)
@@ -35,7 +35,7 @@ defmodule SimEq.Gauss do
     pivot_num = max(Enum.max(candidates), abs(Enum.min(candidates)))
     i + Enum.find_index(candidates, &(abs(&1) == pivot_num))
   end
-  defp get_pivot_index(%SimEq.Matrix{line: l_m} = matrix, i, true) do
+  defp get_pivot_index(%Matrix{line: l_m} = matrix, i, true) do
     #complete pivoting
     targets = for k <- i..l_m do
       Enum.drop(get_line(matrix, k), i-1) end
@@ -54,9 +54,9 @@ defmodule SimEq.Gauss do
     div_sub_lines(tail, j+1, i, mul_R_l(matrix, j, i, -h))
   end
 
-  defp fe_helper(%SimEq.Matrix{line: l_m} = matrix, i,
+  defp fe_helper(%Matrix{line: l_m} = matrix, i,
     _, _, acm) when l_m == i, do: {matrix, acm}
-  defp fe_helper(%SimEq.Matrix{line: l_m} = matrix, i,
+  defp fe_helper(%Matrix{line: l_m} = matrix, i,
     false, _, _) do
     pivot_num = get_factor(matrix, i, i)
     div_nums = for j <- (i+1)..l_m, do: get_factor(matrix, j, i) / pivot_num
@@ -64,7 +64,7 @@ defmodule SimEq.Gauss do
       i+1,
       false, false, [])
   end
-  defp fe_helper(%SimEq.Matrix{line: l_m} = matrix, i,
+  defp fe_helper(%Matrix{line: l_m} = matrix, i,
     true, is_comp, acm) do
     if is_comp do
       {pivot_i, pivot_j} = get_pivot_index(matrix, i, true)
@@ -93,7 +93,7 @@ defmodule SimEq.Gauss do
   end
 
 
-  def forward_eliminate(%SimEq.Matrix{line: l_m, row: r_n}, _, _)
+  def forward_eliminate(%Matrix{line: l_m, row: r_n}, _, _)
     when l_m != r_n, do: raise "math error <forward_eliminate@gauss.ex>"
   def forward_eliminate(m, pivoting, is_comp) do
     fe_helper(m, 1, pivoting, is_comp, [])
@@ -126,7 +126,7 @@ defmodule SimEq.Gauss do
   end
 
 
-  def backward_substitute(%SimEq.Matrix{contents: c}, hist) do
+  def backward_substitute(%Matrix{contents: c}, hist) do
     #donot check the size
     #(already checked at forward elimination)
     calc_result(c, [])
