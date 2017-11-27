@@ -140,8 +140,6 @@ defmodule SimEq.Gauss do
     pivoting \\ false, is_comp \\ false) do
     expanded_matrix = expand(matrix, inhom_vector)
     {ut_matrix, hist} = forward_eliminate(expanded_matrix, pivoting, is_comp)
-    print_matrix_row(ut_matrix)
-    IO.puts hist
     backward_substitute(ut_matrix, hist)
   end
 

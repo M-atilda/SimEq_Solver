@@ -4,6 +4,7 @@ defmodule SimEq.Mixfile do
   def project do
     [
       app: :sim_eq,
+      escript: escript_config(),
       version: "0.1.0",
       elixir: "~> 1.5",
       start_permanent: Mix.env == :prod,
@@ -26,4 +27,9 @@ defmodule SimEq.Mixfile do
       {:matrix, git: "https://github.com/M-atilda/Matrix.git"}
     ]
   end
+
+  defp escript_config do
+    [main_module: SimEq.Interface]
+  end
+
 end
