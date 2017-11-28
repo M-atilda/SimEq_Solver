@@ -57,20 +57,17 @@ defmodule SimEq.Factorization do
     {%Matrix{line: l_m, row: r_n, contents: l_c},
      %Matrix{line: l_m, row: r_n, contents: u_c}}
   end
-  def factorize(%Matrix{line: r_n} = matrix,
-    1, _, _) do
+  def factorize(%Matrix{line: r_n} = matrix, 1, _, _) do
     l_r = get_row(matrix, 1)
     [diag_factor|_] = l_r
     u_l = for j <- 2..r_n do
       get_factor(matrix, 1, j) end
       |> Enum.map(fn val -> val / diag_factor end)
-    factorize(matrix,
-      2, [l_r], [u_l])
+    factorize(matrix, 2, [l_r], [u_l])
   end
-  def factorize(%Matrix{line: l_m, row: r_n} = m,
+  def factorize(%Matrix{line: l_m, row: r_n} = matrix,
     i, acm_r, acm_l) do
-
-    subed_r = Enum.drop(get_row(m, i), i-1)
+    subed_r = Enum.drop(get_row(matrix, i), i-1)
     sub_r = for j <- i..l_m do
       for k <- 1..(i-1) do
         Enum.at(Enum.at(acm_r, k-1), j-k) *
@@ -82,7 +79,7 @@ defmodule SimEq.Factorization do
     new_acm_r = acm_r ++ [new_r]
     [diag_factor|_] = new_r
 
-    subed_l = Enum.drop(get_line(m, i), i)
+    subed_l = Enum.drop(get_line(matrix, i), i)
     sub_l = for j <- (i+1)..r_n do
       for k <- 1..(i-1) do
         Enum.at(Enum.at(acm_r, k-1), i-k) *
@@ -92,8 +89,7 @@ defmodule SimEq.Factorization do
     end
     new_l = sub_vector(subed_l, sub_l)
             |> Enum.map(&(&1 / diag_factor))
-    #TODO: linking lists every times seems inefficient
-    factorize(m, i+1, new_acm_r, acm_l ++ [new_l])
+    factorize(matrix, i+1, new_acm_r, acm_l ++ [new_l])
   end
 
 
@@ -122,9 +118,24 @@ defmodule SimEq.Factorization do
 
 
 
-  def solve_factorize(matrix, inhom_vectors) do
+  def solve_factorize(%Matrix{row: r_n} = origin_matrix, origin_inhoms) do
+    swap = fn (i, {hist, m})
+      -> {pivot_id, _} = SimEq.Gauss.get_pivot_index(m, i, false)
+         {[{i, pivot_id}|hist], mul_P_l(m, i, pivot_id)} end
+    {hist, matrix} = Stream.iterate(1, &(&1+1))
+                     |> Enum.take(r_n)
+                     |> Enum.reduce({[], origin_matrix}, swap)
+
+    #NOTE: this usage is not the one originally intended
+    inhoms = Enum.map(origin_inhoms,
+      fn b -> SimEq.Gauss.modify_results_order(b, hist) end)
+
     {lt_matrix, ut_matrix} = factorize(matrix, 1, [], [])
-    Enum.map(inhom_vectors,
+    IO.puts "<L>"
+    print_matrix_row(lt_matrix)
+    IO.puts "<U>"
+    print_matrix_row(ut_matrix)
+    Enum.map(inhoms,
       fn v -> forward_substitute(lt_matrix, v)
               |> backward_substitute(ut_matrix) end)
   end

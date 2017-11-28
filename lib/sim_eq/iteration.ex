@@ -2,7 +2,7 @@ defmodule SimEq.Iteration do
   import Matrix
 
   # defolt params for iterative calcuration
-  @defolt_tolerance 1.0e-6
+  @defolt_tolerance 1.0e-06
   @defolt_max_iteration_times 1000
 
   #@fn     [float] solve_jacob(%Matrix, [float], ())
@@ -42,15 +42,17 @@ defmodule SimEq.Iteration do
   defp calc_next_result(%Matrix{line: l_m} = matrix, inhom_vector,
                         result) do
     for i <- 1..l_m do i end
-    |> Enum.map(fn i
-      -> calc_next_val(i,
-                       get_line(matrix, i), Enum.at(inhom_vector, i-1),
-                       result) end)
+    |> Enum.map(
+      &(Task.await(Task.async(fn -> calc_next_val(&1,
+                    get_line(matrix, &1), Enum.at(inhom_vector, &1-1),
+                    result) end))))
   end
 
   defp is_acceptable_result(tol, result, new_result) do
     Enum.zip(result, new_result)
-    |> Enum.reduce(true, fn ({f, s}, acm) -> acm && (tol > abs(f-s)) end)
+    |> Enum.map(fn {f, s}
+      -> Task.await(Task.async(fn -> (tol*f) > abs(f-s) end)) end)
+    |> Enum.reduce(true, fn (b, acm) -> acm && b end)
   end
 
   defp jacob(_, _,

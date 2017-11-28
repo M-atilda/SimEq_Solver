@@ -28,14 +28,13 @@ defmodule SimEq.Gauss do
 
 
 
-  # helpers for forward elimination
-  defp get_pivot_index(matrix, i, false) do
+  def get_pivot_index(matrix, i, false) do
     #partial pivoting
     candidates = Enum.drop(get_row(matrix, i), i-1)
     pivot_num = max(Enum.max(candidates), abs(Enum.min(candidates)))
-    i + Enum.find_index(candidates, &(abs(&1) == pivot_num))
+    {i + Enum.find_index(candidates, &(abs(&1) == pivot_num)), i}
   end
-  defp get_pivot_index(%Matrix{line: l_m} = matrix, i, true) do
+  def get_pivot_index(%Matrix{line: l_m} = matrix, i, true) do
     #complete pivoting
     targets = for k <- i..l_m do
       Enum.drop(get_line(matrix, k), i-1) end
@@ -49,54 +48,46 @@ defmodule SimEq.Gauss do
   end
 
 
-  defp div_sub_lines([], _, _, matrix), do: matrix
-  defp div_sub_lines([h|tail], j, i, matrix) do
-    div_sub_lines(tail, j+1, i, mul_R_l(matrix, j, i, -h))
+
+  # helpers for forward elimination
+  defp calc_divided_line({i, j, div_num}, matrix) do
+    Task.await(Task.async(fn ->
+          Enum.zip(get_line(matrix, i), get_line(matrix, j))
+          |> Enum.map(fn {f, s} -> s-(f*div_num) end)
+          # get_line(mul_R_l(matrix, i, j, -div_num), j)
+        end))
   end
 
-  defp fe_helper(%Matrix{line: l_m} = matrix, i,
-    _, _, acm) when l_m == i, do: {matrix, acm}
-  defp fe_helper(%Matrix{line: l_m} = matrix, i,
-    false, _, _) do
-    pivot_num = get_factor(matrix, i, i)
-    div_nums = for j <- (i+1)..l_m, do: get_factor(matrix, j, i) / pivot_num
-    fe_helper(div_sub_lines(div_nums, i+1, i, matrix),
-      i+1,
-      false, false, [])
-  end
-  defp fe_helper(%Matrix{line: l_m} = matrix, i,
-    true, is_comp, acm) do
-    if is_comp do
-      {pivot_i, pivot_j} = get_pivot_index(matrix, i, true)
-      swaped_matrix = mul_P_l(matrix, i, pivot_i)
-                      |> mul_P_r(i, pivot_j)
-      pivot_num = get_factor(swaped_matrix, i, i)
-      div_nums = for j <- (i+1)..l_m do
-        get_factor(swaped_matrix, j, i) / pivot_num
-      end
-      fe_helper(div_sub_lines(div_nums, i+1, i, swaped_matrix),
-                i+1,
-                true, true,
-                [{i, pivot_j}|acm])
-    else
-      pivot_id = get_pivot_index(matrix, i, false)
-      swaped_matrix = mul_P_l(matrix, i, pivot_id)
-      pivot_num = get_factor(swaped_matrix, i, i)
-      div_nums = for j <- (i+1)..l_m do
-        get_factor(swaped_matrix, j, i) / pivot_num
-      end
-      fe_helper(div_sub_lines(div_nums, i+1, i, swaped_matrix),
-                i+1,
-                true, false,
-                acm)
-    end
+  #@fn     {%Matrix, [{int,int}]} fe_helper(%Matrix, int, boolean, [{int,int}])
+  #@param  coefficient matrix while conversion to upper triangular one
+  #@param  the number of lines already precessed
+  #@param  use completion pivoting or not
+  #@param  row swapping history
+  defp fe_helper(%Matrix{line: l_m} = matrix,
+    i, _, acm) when l_m == i, do: {matrix, acm}
+  defp fe_helper(%Matrix{line: l_m, contents: c} = matrix, i,
+    is_comp, acm) do
+    {pivot_i, pivot_j} = get_pivot_index(matrix, i, is_comp)
+    swaped_matrix = mul_P_l(matrix, i, pivot_i)
+    |> mul_P_r(i, pivot_j)
+    new_hist = if is_comp do
+      [{i, pivot_j}|acm] else acm end
+    pivot_num = get_factor(swaped_matrix, i, i)
+    div_nums = for j <- (i+1)..l_m do
+      {i, j, get_factor(swaped_matrix, j, i) / pivot_num} end
+    new_matrix = generate(
+      Enum.take(c, i) ++
+      for x <- div_nums do
+        calc_divided_line(x, swaped_matrix) end)
+
+    fe_helper(new_matrix, i+1, is_comp, new_hist)
   end
 
 
-  def forward_eliminate(%Matrix{line: l_m, row: r_n}, _, _)
+  def forward_eliminate(%Matrix{line: l_m, row: r_n}, _)
     when l_m != r_n, do: raise "math error <forward_eliminate@gauss.ex>"
-  def forward_eliminate(m, pivoting, is_comp) do
-    fe_helper(m, 1, pivoting, is_comp, [])
+  def forward_eliminate(m, is_comp) do
+    fe_helper(m, 1, is_comp, [])
   end
 
 
@@ -116,8 +107,8 @@ defmodule SimEq.Gauss do
       [(inhom_val-sub_val) / u_ii|result])
   end
 
-  defp modify_results_order(result, []), do: result
-  defp modify_results_order(result, [{f_id, s_id}|tail]) do
+  def modify_results_order(result, []), do: result
+  def modify_results_order(result, [{f_id, s_id}|tail]) do
     f_val = Enum.at(result, f_id-1)
     s_val = Enum.at(result, s_id-1)
     new_result = List.replace_at(result, f_id-1, s_val)
@@ -137,9 +128,9 @@ defmodule SimEq.Gauss do
 
 
   def solve_gaussian_eliminate(matrix, inhom_vector,
-    pivoting \\ false, is_comp \\ false) do
+    is_comp \\ false) do
     expanded_matrix = expand(matrix, inhom_vector)
-    {ut_matrix, hist} = forward_eliminate(expanded_matrix, pivoting, is_comp)
+    {ut_matrix, hist} = forward_eliminate(expanded_matrix, is_comp)
     backward_substitute(ut_matrix, hist)
   end
 
