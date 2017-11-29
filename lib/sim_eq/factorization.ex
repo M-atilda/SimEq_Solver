@@ -26,16 +26,17 @@ defmodule SimEq.Factorization do
     Enum.zip(subed_v, sub_v)
     |> Enum.map(fn {subed, sub} -> subed - sub end)
   end
-  defp gen_l(_, i, j) when i < j, do: 0
-  defp gen_l(acm_r, i, j) do
+  defp gen_lt(_, i, j) when i < j, do: 0
+  defp gen_lt(acm_r, i, j) do
     Enum.at(Enum.at(acm_r, j-1), i-j)
   end
-  defp gen_u(_, i, i), do: 1
-  defp gen_u(_, i, j) when i > j, do: 0
-  defp gen_u(acm_l, i, j) do
+  defp gen_ut(_, i, i), do: 1
+  defp gen_ut(_, i, j) when i > j, do: 0
+  defp gen_ut(acm_l, i, j) do
     Enum.at(Enum.at(acm_l, i-1), j-i-1)
   end
 
+  #@brief returns {LT Matrix, UT Matrix}
   def factorize(%Matrix{line: l_m, row: r_n} = matrix,
     i, acm_r, acm_l) when l_m == i do
     subed_val = get_factor(matrix, l_m, r_n)
@@ -46,12 +47,12 @@ defmodule SimEq.Factorization do
     new_acm_r = acm_r ++ [last_r]
     l_c = for i <- 1..l_m do
       for j <- 1..r_n do
-        gen_l(new_acm_r, i, j)
+        gen_lt(new_acm_r, i, j)
       end
     end
     u_c = for i <- 1..l_m do
       for j <- 1..r_n do
-        gen_u(acm_l, i, j)
+        gen_ut(acm_l, i, j)
       end
     end
     {%Matrix{line: l_m, row: r_n, contents: l_c},

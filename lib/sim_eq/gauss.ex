@@ -79,7 +79,6 @@ defmodule SimEq.Gauss do
       Enum.take(c, i) ++
       for x <- div_nums do
         calc_divided_line(x, swaped_matrix) end)
-
     fe_helper(new_matrix, i+1, is_comp, new_hist)
   end
 

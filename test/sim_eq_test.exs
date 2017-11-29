@@ -2,12 +2,12 @@ defmodule SimEqTest do
   use ExUnit.Case
   doctest SimEq
 
-  @tag timeout: 10800000
+  # @tag timeout: 10800000
 
-  @matrix Matrix.generate([[2.0, 3.0, -1.0],
-                           [4.0, 4.0, -3.0],
-                           [2.0, -3.0, 1.0]])
-  @inhom [5.0, 3.0, -1.0]
+  # @matrix Matrix.generate([[2.0, 3.0, -1.0],
+  #                          [4.0, 4.0, -3.0],
+  #                          [2.0, -3.0, 1.0]])
+  # @inhom [5.0, 3.0, -1.0]
   #@start [0.0, 0.0, 0.0]
 
   # @matrix Matrix.generate([[5, -3, -1, 0, 2, 1],
@@ -20,42 +20,29 @@ defmodule SimEqTest do
   # @start [10, 10, 10, 10, 10, 10]
   # # @start [0,0,0,0,0,0]
 
-  # @matrix Matrix.generate(
-  #   [[   2,   0,   0,   0,  -1,   0,-0.5, 0.5,   0],
-  #    [   0,   2,   0,  -1,   0,   0, 0.5,-0.5,   0],
-  #    [   0,   0, 2.5, 0.5,-0.5,-0.5,  -1,   0,   0],
-  #    [   0,  -1, 0.5, 1.5,-0.5,-0.5,   0,   0,   0],
-  #    [  -1,   0,-0.5,-0.5,   2,   1,   0,   0,-0.5],
-  #    [   0,   0,-0.5,-0.5,   1,   2,   0,  -1, 0.5],
-  #    [-0.5, 0.5,  -1,   0,   0,   0, 2.5,-0.5,  -1],
-  #    [ 0.5,-0.5,   0,   0,   0,  -1,-0.5, 1.5,   0],
-  #    [   0,   0,   0,   0,-0.5, 0.5,  -1,   0, 1.5]])
-  # p_3y_ex = -500 / (2.8 * :math.pow(10, 7))
-  # p_5y_ex = -300 / (2.8 * :math.pow(10, 7))
-  # #p_3y_ex = -500
-  # #p_5y_ex = -300
-  # @inhom [0,0,0,p_3y_ex,0,0,0,p_5y_ex,0]
-  # # @start [1,1,1,1,1,1,1,1,1]
+  @matrix Matrix.generate(
+    [[   2,   0,   0,   0,  -1,   0,-0.5, 0.5,   0],
+     [   0,   2,   0,  -1,   0,   0, 0.5,-0.5,   0],
+     [   0,   0, 2.5, 0.5,-0.5,-0.5,  -1,   0,   0],
+     [   0,  -1, 0.5, 1.5,-0.5,-0.5,   0,   0,   0],
+     [  -1,   0,-0.5,-0.5,   2,   0,   0,   0,-0.5],
+     [   0,   0,-0.5,-0.5,   0,   2,   0,  -1, 0.5],
+     [-0.5, 0.5,  -1,   0,   0,   0, 2.5,-0.5,  -1],
+     [ 0.5,-0.5,   0,   0,   0,  -1,-0.5, 1.5,   0],
+     [   0,   0,   0,   0,-0.5, 0.5,  -1,   0, 1.5]])
+  p_3y_ex = -500 / (2.8 * :math.pow(10, 7))
+  p_5y_ex = -300 / (2.8 * :math.pow(10, 7))
+  #p_3y_ex = -500
+  #p_5y_ex = -300
+  @inhom [0,0,0,p_3y_ex,0,0,0,p_5y_ex,0]
+  # @start [1,1,1,1,1,1,1,1,1]
 
 
-  # test "gaussian" do
+  test "gaussian" do
 
-  #   IO.puts "@gaussian"
-  #   IO.puts "* result *"
-  #   result = SimEq.Gauss.solve_gaussian_eliminate(@matrix, @inhom)
-  #   Enum.map(result, fn val -> IO.puts val end)
-
-  #   IO.puts "* error *"
-  #   error = SimEq.get_error(@matrix, @inhom, result)
-  #   Enum.map(error, fn val -> IO.puts val end)
-  #   IO.puts "* error norm *"
-  #   IO.puts SimEq.get_error_norm(@matrix, @inhom, result)
-  # end
-
-  test "factorization" do
-    IO.puts "@LU factorization"
+    IO.puts "@gaussian"
     IO.puts "* result *"
-    [result|_] = SimEq.Factorization.solve_factorize(@matrix, [@inhom])
+    result = SimEq.Gauss.solve_gaussian_eliminate(@matrix, @inhom)
     Enum.map(result, fn val -> IO.puts val end)
 
     IO.puts "* error *"
@@ -64,6 +51,19 @@ defmodule SimEqTest do
     IO.puts "* error norm *"
     IO.puts SimEq.get_error_norm(@matrix, @inhom, result)
   end
+
+  # test "factorization" do
+  #   IO.puts "@LU factorization"
+  #   IO.puts "* result *"
+  #   [result|_] = SimEq.Factorization.solve_factorize(@matrix, [@inhom])
+  #   Enum.map(result, fn val -> IO.puts val end)
+
+  #   IO.puts "* error *"
+  #   error = SimEq.get_error(@matrix, @inhom, result)
+  #   Enum.map(error, fn val -> IO.puts val end)
+  #   IO.puts "* error norm *"
+  #   IO.puts SimEq.get_error_norm(@matrix, @inhom, result)
+  # end
 
 
   # test "calc with jacob method" do

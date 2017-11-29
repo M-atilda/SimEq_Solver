@@ -31,6 +31,14 @@ defmodule SimEq.Iteration do
 
 
 
+  defp is_acceptable_result(tol, result, new_result) do
+    Enum.zip(result, new_result)
+    |> Enum.map(fn {f, s}
+      -> Task.await(Task.async(fn -> (tol*f) > abs(f-s) end)) end)
+    |> Enum.reduce(true, fn (b, acm) -> acm && b end)
+  end
+
+
   defp calc_next_val(i,
                      l, inhom_val,
                      result) do
@@ -46,13 +54,6 @@ defmodule SimEq.Iteration do
       &(Task.await(Task.async(fn -> calc_next_val(&1,
                     get_line(matrix, &1), Enum.at(inhom_vector, &1-1),
                     result) end))))
-  end
-
-  defp is_acceptable_result(tol, result, new_result) do
-    Enum.zip(result, new_result)
-    |> Enum.map(fn {f, s}
-      -> Task.await(Task.async(fn -> (tol*f) > abs(f-s) end)) end)
-    |> Enum.reduce(true, fn (b, acm) -> acm && b end)
   end
 
   defp jacob(_, _,
